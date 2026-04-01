@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบพื้นฐาน Python 20 ข้อ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; }
+        .option-btn:hover { transform: translateY(-2px); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+
+    <!-- Login Container -->
+    <div id="login-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-blue-600">แบบทดสอบ Python</h1>
+            <p class="text-gray-500">กรุณากรอกข้อมูลเพื่อเริ่มทำแบบทดสอบ</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล</label>
+                <input type="text" id="student-name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="ภาษาไทยหรืออังกฤษ">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">รหัสนักศึกษา</label>
+                <input type="text" id="student-id" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="ระบุตัวเลขรหัส">
+            </div>
+            <button onclick="startQuiz()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                เริ่มทำข้อสอบ
+            </button>
+        </div>
+        
+        <!-- Admin Access Button -->
+        <div class="mt-8 pt-4 border-t border-gray-100 flex justify-center">
+            <button onclick="showAdminPrompt()" class="text-xs text-gray-400 hover:text-blue-500 transition-colors flex items-center">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                Admin: Download Results (CSV)
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Container -->
+    <div id="quiz-screen" class="hidden bg-white p-6 md:p-10 rounded-2xl shadow-xl w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <span id="progress-text" class="text-sm font-medium text-blue-600 uppercase tracking-wider">ข้อที่ 1 / 20</span>
+            <div class="w-1/2 bg-gray-200 rounded-full h-2">
+                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 5%"></div>
+            </div>
+        </div>
+        
+        <div id="question-container" class="mb-8">
+            <h2 id="question-text" class="text-xl font-semibold text-gray-800 leading-relaxed mb-6">คำถาม...</h2>
+            <div id="options-grid" class="grid grid-cols-1 gap-4">
+                <!-- Options buttons go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden bg-white p-10 rounded-2xl shadow-xl w-full max-w-md text-center">
+        <div class="mb-6">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mb-4">
+                <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800">ส่งคำตอบเรียบร้อย!</h2>
+        </div>
+        <div class="bg-gray-50 p-6 rounded-xl mb-6">
+            <p class="text-sm text-gray-500 uppercase font-semibold">คะแนนของคุณคือ</p>
+            <div class="text-5xl font-black text-blue-600 mt-1"><span id="final-score">0</span> / 20</div>
+        </div>
+        <div id="status-message" class="text-sm text-gray-400 italic mb-6">กำลังบันทึกข้อมูล...</div>
+        <button onclick="location.reload()" class="text-blue-600 font-semibold hover:underline">กลับหน้าแรก</button>
+    </div>
+
+    <!-- Admin Prompt Modal -->
+    <div id="admin-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 class="text-lg font-bold mb-4">Admin Login</h3>
+            <input type="password" id="admin-password" class="w-full p-2 border rounded mb-4" placeholder="กรอกรหัสผ่าน admin">
+            <div class="flex space-x-2">
+                <button onclick="downloadCSV()" class="flex-1 bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">Download CSV</button>
+                <button onclick="hideAdminPrompt()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqgPc_SwZqVajxJOZBKt2XqNR23FDxfB0",
+            authDomain: "scorestudent-f18c5.firebaseapp.com",
+            databaseURL: "https://scorestudent-f18c5-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "scorestudent-f18c5",
+            storageBucket: "scorestudent-f18c5.firebasestorage.app",
+            messagingSenderId: "55893928684",
+            appId: "1:55893928684:web:028dea08aa9b3c3af853c9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = "python-quiz-001";
+        const ADMIN_PASSWORD = "admin123"; // คุณสามารถเปลี่ยนรหัสผ่านตรงนี้ได้
+
+        const questions = [
+            { q: "ในการจัดหน้าข้อความที่ต้องการพิมพ์ (Print) อักขระพิเศษ \\t ทำหน้าที่อะไร?", options: ["ขึ้นบรรทัดใหม่", "เว้นระยะแบบ Tab", "พิมพ์ตัวอักษร t", "ลบตัวอักษรก่อนหน้า"], correct: 1 },
+            { q: "ผลลัพธ์จากการรันคำสั่ง print('%0.2f'%25) คือข้อใด?", options: ["25", "25.0", "25.00", "0.25"], correct: 2 },
+            { q: "กฎการตั้งชื่อตัวแปร (Variable) ในภาษา Python ข้อใด กล่าวผิด?", options: ["สามารถตั้งชื่อเป็นภาษาไทยได้", "สามารถขึ้นต้นด้วยตัวเลขได้", "ตัวอักษรพิมพ์เล็กหรือพิมพ์ใหญ่ถือว่าแตกต่างกัน", "ห้ามตั้งชื่อซ้ำกับคำหลัก (Keyword) ที่เป็นคำสั่งของ Python"], correct: 1 },
+            { q: "เครื่องหมายใดใช้สำหรับการ หารปัดเศษทิ้ง ในภาษา Python?", options: ["%", "/", "//", "**"], correct: 2 },
+            { q: "หากต้องการแปลงข้อมูลให้กลายเป็นตัวเลข จำนวนเต็ม ต้องใช้คำสั่งใด?", options: ["int()", "float()", "str()", "num()"], correct: 0 },
+            { q: "ในการออกแบบ Flowchart สัญลักษณ์รูป ข้าวหลามตัด (Diamond) สื่อถึงขั้นตอนใด?", options: ["Start/End", "Input/Output", "Process", "Decision"], correct: 3 },
+            { q: "ตัวดำเนินการทางตรรกศาสตร์ or จะให้ผลลัพธ์เป็นจริง (True) ในกรณีใด?", options: ["จริงทั้งคู่เท่านั้น", "มีอย่างน้อยหนึ่งอย่างที่เป็นจริง", "เท็จทั้งคู่", "กลับค่าผลลัพธ์"], correct: 1 },
+            { q: "ตัวดำเนินการ is (Identity Operator) ใช้ตรวจสอบสิ่งใด?", options: ["ตรวจสอบเงื่อนไขจริง/เท็จ", "ตรวจสอบค่าตัวเลข", "ตรวจสอบว่าเป็น Object เดียวกันหรือไม่", "ตรวจสอบค่าตรงข้าม"], correct: 2 },
+            { q: "หากรันคำสั่ง for x in range(2, 6): ตัวแปร x จะเก็บค่าใด?", options: ["1, 2, 3, 4, 5", "2, 3, 4, 5", "2, 3, 4, 5, 6", "2, 4, 6"], correct: 1 },
+            { q: "หากต้องการเขียนให้ Infinite loop สามารถใช้คำสั่งใด?", options: ["while (-1):", "while i < 6:", "for x in range(0):", "if (True):"], correct: 0 },
+            { q: "คำสั่งที่ใช้สร้าง Function ใน Python คือข้อใด?", options: ["func", "create", "return", "def"], correct: 3 },
+            { q: "ขั้นตอน Act ใน AAA Model หมายถึงอะไร?", options: ["เตรียมข้อมูล", "เรียกใช้งาน Function", "ตรวจสอบผลลัพธ์", "หาบั๊ก"], correct: 1 },
+            { q: "pytest นิยมใช้คำสั่งใดในการเปรียบเทียบผลลัพธ์?", options: ["assert", "self.assertEqual", "check", "verify"], correct: 0 },
+            { q: "Error ประเภทใดที่รันได้แต่ผลลัพธ์ผิด?", options: ["Syntax Error", "Runtime Error", "Logical Error", "Compile Error"], correct: 2 },
+            { q: "Library มาตรฐานสำหรับ GUI คือข้อใด?", options: ["Flowchart", "Pytest", "Unittest", "Tkinter"], correct: 3 },
+            { q: "Widget ใดใน GUI ที่เทียบได้กับ Decision ใน Flowchart?", options: ["Entry", "Label", "Function", "Button"], correct: 3 },
+            { q: "คำสั่งที่ทำให้หน้าต่าง GUI เปิดค้างรอรับคำสั่งคือ?", options: ["window.pack()", "window.mainloop()", "window.geometry()", "tk.Tk()"], correct: 1 },
+            { q: "List และ Tuple ต่างกันอย่างไร?", options: ["สัญลักษณ์ต่างกันเฉยๆ", "Tuple แก้ได้ List แก้ไม่ได้", "List แก้ได้ Tuple แก้ไม่ได้", "List เร็วกว่า"], correct: 2 },
+            { q: "ผลลัพธ์ของ print(\"hello\"*3) คือ?", options: ["hellohellohello", "3hello", "hello+3", "Error"], correct: 0 },
+            { q: "กรณีทดสอบที่ค่ารอยต่อ (เช่น คะแนน 80) เรียกว่าอะไร?", options: ["Normal Case", "Boundary Case", "Syntax Case", "Logical Case"], correct: 1 }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let studentData = { name: "", id: "" };
+        let currentUser = null;
+
+        // Auth
+        const init = async () => {
+            await signInAnonymously(auth);
+            onAuthStateChanged(auth, (user) => currentUser = user);
+        };
+        init();
+
+        window.startQuiz = () => {
+            const name = document.getElementById('student-name').value.trim();
+            const id = document.getElementById('student-id').value.trim();
+            if (!name || !id) return alert("กรุณากรอกข้อมูล");
+            studentData = { name, id };
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            renderQuestion();
+        };
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-text').textContent = q.q;
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn text-left p-4 border-2 border-gray-100 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center group";
+                btn.onclick = () => handleAnswer(idx);
+                btn.innerHTML = `
+                    <span class="w-8 h-8 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center mr-4 group-hover:bg-blue-500 group-hover:text-white font-bold">${String.fromCharCode(65+idx)}</span>
+                    <span class="text-gray-700">${opt}</span>
+                `;
+                grid.appendChild(btn);
+            });
+            
+            document.getElementById('progress-text').textContent = `ข้อที่ ${currentQuestionIndex + 1} / ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+        }
+
+        function handleAnswer(idx) {
+            if (idx === questions[currentQuestionIndex].correct) score++;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) renderQuestion();
+            else finish();
+        }
+
+        async function finish() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').textContent = score;
+
+            if (currentUser) {
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results'), {
+                        studentName: studentData.name,
+                        studentId: studentData.id,
+                        score: score,
+                        maxScore: questions.length,
+                        timestamp: serverTimestamp(),
+                        userId: currentUser.uid
+                    });
+                    document.getElementById('status-message').textContent = "บันทึกผลคะแนนสำเร็จ!";
+                } catch (e) {
+                    document.getElementById('status-message').textContent = "บันทึกล้มเหลว";
+                }
+            }
+        }
+
+        // Admin Functions
+        window.showAdminPrompt = () => document.getElementById('admin-modal').classList.remove('hidden');
+        window.hideAdminPrompt = () => document.getElementById('admin-modal').classList.add('hidden');
+
+        window.downloadCSV = async () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass !== ADMIN_PASSWORD) return alert("รหัสผ่านไม่ถูกต้อง");
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results'));
+                let csvContent = "\uFEFF"; // UTF-8 BOM for Excel
+                csvContent += "รหัสนักศึกษา,ชื่อ-นามสกุล,คะแนน,จากเต็ม,เวลาที่ส่ง\n";
+
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const date = d.timestamp ? d.timestamp.toDate().toLocaleString('th-TH') : '-';
+                    csvContent += `"${d.studentId}","${d.studentName}","${d.score}","${d.maxScore}","${date}"\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", "quiz_results.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                hideAdminPrompt();
+            } catch (e) {
+                alert("ไม่สามารถดึงข้อมูลได้: " + e.message);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Programming Quiz (Admin)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        .quiz-option:hover { transform: translateY(-2px); transition: all 0.2s; }
+        .admin-modal { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <div id="app" class="max-w-2xl mx-auto px-4 py-8 relative">
+        <!-- Start Screen -->
+        <div id="start-screen" class="bg-white rounded-2xl shadow-xl p-8 text-center relative">
+            <!-- Admin Button -->
+            <button onclick="toggleAdminModal(true)" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </button>
+
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">แบบทดสอบพื้นฐาน Python</h1>
+                <p class="text-gray-500">กรุณากรอกข้อมูลเพื่อเริ่มทำแบบทดสอบ</p>
+            </div>
+
+            <div class="space-y-4 max-w-sm mx-auto">
+                <input type="text" id="student-name" placeholder="ชื่อ-นามสกุล" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="student-id" placeholder="เลขประจำตัว" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition-all">เริ่มทำแบบทดสอบ</button>
+            </div>
+        </div>
+
+        <!-- Admin Modal (Hidden) -->
+        <div id="admin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center admin-modal p-4">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <svg class="mr-2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Data (CSV)
+                </h3>
+                <p class="text-sm text-gray-500 mb-4">กรุณากรอกรหัสผ่าน Admin เพื่อดาวน์โหลดข้อมูลคะแนน</p>
+                <input type="password" id="admin-pass" placeholder="รหัสผ่าน Admin" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-4">
+                <div class="flex space-x-3">
+                    <button onclick="toggleAdminModal(false)" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">ยกเลิก</button>
+                    <button id="download-btn" class="flex-1 bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700">ดาวน์โหลด CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Screen (Hidden) -->
+        <div id="quiz-screen" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <span id="progress-text" class="text-sm font-medium text-gray-500">ข้อที่ 1 จาก 20</span>
+                <div class="w-32 bg-gray-200 rounded-full h-2">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 5%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <h2 id="question-text" class="text-xl font-semibold text-gray-800 mb-6"></h2>
+                <div id="options-container" class="space-y-3"></div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <button id="prev-btn" onclick="prevQuestion()" class="invisible text-gray-500 font-medium px-4 py-2 hover:bg-gray-100 rounded-lg">ย้อนกลับ</button>
+                <button id="next-btn" onclick="nextQuestion()" class="bg-blue-600 text-white font-semibold px-8 py-2 rounded-lg hover:bg-blue-700">ถัดไป</button>
+            </div>
+        </div>
+
+        <!-- Result Screen (Hidden) -->
+        <div id="result-screen" class="hidden text-center">
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">สรุปผลคะแนน</h2>
+                <div class="text-6xl font-bold text-blue-600 my-6" id="final-score">0 / 20</div>
+                <p id="result-message" class="text-gray-600 mb-6"></p>
+                <button onclick="location.reload()" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors">กลับหน้าแรก</button>
+            </div>
+            <div id="answers-summary" class="space-y-4 text-left"></div>
+        </div>
+
+        <!-- Custom Alert -->
+        <div id="custom-alert" class="hidden fixed top-4 right-4 left-4 md:left-auto md:w-80 bg-red-500 text-white p-4 rounded-lg shadow-2xl z-[100] animate-bounce">
+            <p id="alert-text" class="font-medium"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqgPc_SwZqVajxJOZBKt2XqNR23FDxfB0",
+            authDomain: "scorestudent-f18c5.firebaseapp.com",
+            databaseURL: "https://scorestudent-f18c5-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "scorestudent-f18c5",
+            storageBucket: "scorestudent-f18c5.firebasestorage.app",
+            messagingSenderId: "55893928684",
+            appId: "1:55893928684:web:028dea08aa9b3c3af853c9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'python-quiz-final';
+        
+        const ADMIN_PASSWORD = "admin1234"; // เปลี่ยนรหัสผ่านตรงนี้
+
+        let currentUser = null;
+        let currentIdx = 0;
+        let userAnswers = [];
+        let studentInfo = { name: "", id: "" };
+
+        const questions = [
+            { q: "ในการจัดหน้าข้อความที่ต้องการพิมพ์ (Print) หากใช้คำสั่ง print('hi\\nhello') จะได้ผลลัพธ์แบบใด?", a: "C", options: { A: "hi hello", B: "hihello", C: "hi (แล้วขึ้นบรรทัดใหม่) hello", D: "hi\\nhello" }, exp: "\\n ใช้สำหรับสั่งขึ้นบรรทัดใหม่" },
+            { q: "หากต้องการจัดหน้าข้อความให้มีการเว้นระยะแบบ Tab จะต้องใช้อักขระพิเศษตัวใดในคำสั่ง Print?", a: "B", options: { A: "\\n", B: "\\t", C: "\\r", D: "\\b" }, exp: "\\t ใช้สำหรับจัดหน้าแบบเว้นระยะ Tab" },
+            { q: "คำสั่ง print('%0.2f'%25) จะให้ผลลัพธ์การแสดงผลออกมาเป็นแบบใด?", a: "C", options: { A: "25", B: "25.0", C: "25.00", D: "0.25" }, exp: "%0.2f คือการฟอร์แมตทศนิยม 2 ตำแหน่ง จึงได้ 25.00" },
+            { q: "ผลลัพธ์จากการรันคำสั่ง print(\"hello\"+\"world\") คือข้อใด?", a: "A", options: { A: "helloworld", B: "hello world", C: "hello+world", D: "จะเกิด Error" }, exp: "Operator + ในสตริงคือการนำคำมาต่อกันโดยไม่เว้นวรรค" },
+            { q: "กฎการตั้งชื่อตัวแปร (Variable) ในภาษา Python ข้อใดผิด?", a: "D", options: { A: "ประกอบด้วยอักษร ตัวเลข และเครื่องหมายขีดเส้นใต้ (_) ได้", B: "สามารถตั้งชื่อภาษาไทยได้", C: "ตัวอักษรพิมพ์เล็กหรือพิมพ์ใหญ่ถือว่าแตกต่างกัน", D: "สามารถขึ้นต้นด้วยตัวเลขได้" }, exp: "ชื่อตัวแปรห้ามขึ้นต้นด้วยตัวเลขเด็ดขาด" },
+            { q: "หากประกาศตัวแปร count = 100 และ Count = 10 ข้อใดกล่าวถูกต้องที่สุด?", a: "D", options: { A: "เป็นตัวแปรเดียวกันที่ถูกอัปเดตค่าเป็น 10", B: "เป็นตัวแปรเดียวกันที่ถูกอัปเดตค่าเป็น 100", C: "โปรแกรมจะ Error เพราะชื่อตัวแปรซ้ำกัน", D: "เป็นตัวแปรคนละตัวกัน" }, exp: "Python เป็น Case-sensitive ตัวพิมพ์เล็ก-ใหญ่มีผลให้นับเป็นคนละตัวแปร" },
+            { q: "เครื่องหมายที่ใช้สำหรับการ ยกกำลัง ในทางคณิตศาสตร์ของ Python คือข้อใด?", a: "B", options: { A: "^", B: "**", C: "//", D: "%" }, exp: "** คือการยกกำลัง" },
+            { q: "เครื่องหมาย // ใช้สำหรับการดำเนินการใด?", a: "A", options: { A: "การหารปัดเศษทิ้ง", B: "การหารเอาเศษ", C: "การรวมสตริง 2 ตัว", D: "การคอมเมนต์โค้ด" }, exp: "// คือการหารปัดเศษทิ้ง" },
+            { q: "หากทำการรันคำสั่ง i = int(4.5) ค่าที่เก็บอยู่ในตัวแปร i จะเป็นเท่าใด?", a: "C", options: { A: "4.5", B: "5", C: "4", D: "เกิดข้อผิดพลาด (Error)" }, exp: "int() จะทำการปัดเศษทิ้งเป็น 4" },
+            { q: "การรันคำสั่ง i = int(\"1.76\") จะให้ผลลัพธ์ตามข้อใด?", a: "D", options: { A: "1.76", B: "2", C: "1", D: "เกิดข้อผิดพลาด (Error) แปลงไม่ได้" }, exp: "ไม่สามารถใช้ int() แปลงสตริงที่เป็นทศนิยมตรงๆ ได้" },
+            { q: "คำสั่งใดที่ใช้สำหรับ รับข้อมูล จากผู้ใช้งาน (User) ผ่านแป้นพิมพ์?", a: "D", options: { A: "scan()", B: "receive()", C: "get()", D: "input()" }, exp: "input() ใช้รับข้อมูลจากผู้ใช้งาน" },
+            { q: "ในแผนผัง Flowchart สัญลักษณ์รูป สี่เหลี่ยมด้านขนาน (Parallelogram) สื่อถึงขั้นตอนใด?", a: "B", options: { A: "Start/Stop", B: "Input/Output", C: "Process", D: "Decision" }, exp: "สี่เหลี่ยมด้านขนานคือ Input/Output" },
+            { q: "สัญลักษณ์ที่ใช้แสดงจุด Start / Stop ในการเขียน Flowchart คือรูปทรงใด?", a: "A", options: { A: "วงรี / แคปซูลขอบมน", B: "สี่เหลี่ยมผืนผ้า", C: "สี่เหลี่ยมข้าวหลามตัด", D: "สี่เหลี่ยมด้านขนาน" }, exp: "วงรีหรือแคปซูลขอบมน คือ Start/Stop" },
+            { q: "ตัวดำเนินการเปรียบเทียบ (Operator) ในข้อใดมีความหมายว่า \"ไม่เท่ากับ\" (Not equal)?", a: "C", options: { A: "=!", B: "<>", C: "!=", D: "==" }, exp: "!= คือ ไม่เท่ากับ" },
+            { q: "ตัวดำเนินการตรรกศาสตร์ (Logical Operator) or จะคืนค่าเป็นจริง ในกรณีใด?", a: "B", options: { A: "เมื่อทั้งสองเงื่อนไขเป็นจริงเท่านั้น", B: "เมื่อมีเงื่อนไขใดเงื่อนไขหนึ่งเป็นจริง", C: "กลับค่าความจริงจากเท็จให้เป็นจริง", D: "เมื่อทั้งสองเงื่อนไขเป็นเท็จ" }, exp: "or จะเป็นจริงเมื่อมีอย่างน้อย 1 เงื่อนไขเป็นจริง" },
+            { q: "ตัวดำเนินการตรรกศาสตร์ not ทำหน้าที่อะไร?", a: "B", options: { A: "ตรวจสอบว่าตัวแปรไม่ใช่ตัวเลข", B: "กลับค่าผลลัพธ์จากจริงเป็นเท็จ และจากเท็จเป็นจริง", C: "ตรวจสอบว่าเงื่อนไขเป็นค่าว่าง", D: "ตรวจสอบความถูกต้องของออบเจกต์" }, exp: "not ใช้กลับค่าจาก True เป็น False หรือตรงข้าม" },
+            { q: "หากต้องการเขียนเงื่อนไข If-else แบบหลายทางเลือก ต้องใช้คำสั่งใดถัดจาก if?", a: "C", options: { A: "else if", B: "elseif", C: "elif", D: "condition" }, exp: "Python ใช้ elif" },
+            { q: "ในการใช้งานคำสั่ง For Loop การรันโค้ด for x in range(2, 6): ตัวแปร x จะรับค่าใดบ้าง?", a: "C", options: { A: "1, 2, 3, 4, 5", B: "2, 3, 4, 5, 6", C: "2, 3, 4, 5", D: "2, 6" }, exp: "range(2, 6) จะได้ 2 ถึง 5" },
+            { q: "โครงสร้างการทำงานใดที่จะต้อง ตรวจสอบเงื่อนไข ก่อนเสมอ หากเป็นจริงจึงจะทำงานในลูป?", a: "A", options: { A: "While Loop", B: "Sequence", C: "Nested If", D: "Process" }, exp: "While Loop เช็คเงื่อนไขก่อนเข้าลูป" },
+            { q: "การเขียนเพื่อให้ โปรแกรมรันลูปอยู่ตลอดเวลา (Infinite loop) คือข้อใด?", a: "B", options: { A: "while (1==2):", B: "while (-1):", C: "for x in all:", D: "for (-1):" }, exp: "while (-1) รันตลอดเวลาได้เพราะ -1 มีค่าเป็นจริง" }
+        ];
+
+        userAnswers = new Array(questions.length).fill(null);
+
+        // Firebase Auth Init
+        signInAnonymously(auth).catch(console.error);
+        onAuthStateChanged(auth, user => { currentUser = user; });
+
+        // Functions
+        window.toggleAdminModal = (show) => {
+            document.getElementById('admin-modal').classList.toggle('hidden', !show);
+            if(show) document.getElementById('admin-pass').focus();
+        };
+
+        window.startQuiz = () => {
+            const name = document.getElementById('student-name').value.trim();
+            const id = document.getElementById('student-id').value.trim();
+            if (!name || !id) return showAlert("กรุณากรอกข้อมูลให้ครบถ้วน");
+            studentInfo = { name, id };
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            renderQuestion();
+        };
+
+        const renderQuestion = () => {
+            const q = questions[currentIdx];
+            document.getElementById('question-text').innerText = `${currentIdx + 1}. ${q.q}`;
+            document.getElementById('progress-text').innerText = `ข้อที่ ${currentIdx + 1} จาก ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            Object.entries(q.options).forEach(([key, val]) => {
+                const btn = document.createElement('button');
+                btn.className = `quiz-option w-full text-left p-4 rounded-xl border-2 transition-all ${userAnswers[currentIdx] === key ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-300'}`;
+                btn.innerHTML = `<span class="font-bold mr-3 text-blue-600">${key})</span> ${val}`;
+                btn.onclick = () => { userAnswers[currentIdx] = key; renderQuestion(); };
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+            document.getElementById('next-btn').innerText = currentIdx === questions.length - 1 ? 'ส่งคำตอบ' : 'ถัดไป';
+        };
+
+        window.nextQuestion = async () => {
+            if (!userAnswers[currentIdx]) return showAlert("กรุณาเลือกคำตอบ");
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                renderQuestion();
+            } else {
+                await submitQuiz();
+            }
+        };
+
+        window.prevQuestion = () => { if (currentIdx > 0) { currentIdx--; renderQuestion(); } };
+
+        const submitQuiz = async () => {
+            let score = 0;
+            questions.forEach((q, idx) => { if (q.a === userAnswers[idx]) score++; });
+
+            if (currentUser) {
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'scores'), {
+                        name: studentInfo.name,
+                        studentId: studentInfo.id,
+                        score: score,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (e) { console.error(e); }
+            }
+            showResults(score);
+        };
+
+        const showResults = (score) => {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            document.getElementById('result-message').innerText = score >= 10 ? "ยินดีด้วย คุณสอบผ่าน!" : "พยายามอีกนิดนะ!";
+
+            const summary = document.getElementById('answers-summary');
+            summary.innerHTML = '<h3 class="text-lg font-bold text-gray-700 mb-4">เฉลย:</h3>';
+            questions.forEach((q, i) => {
+                const correct = userAnswers[i] === q.a;
+                summary.innerHTML += `
+                    <div class="p-4 rounded-lg border-l-4 ${correct ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'} mb-3">
+                        <p class="font-medium">${i+1}. ${q.q}</p>
+                        <p class="text-sm ${correct?'text-green-700':'text-red-700'}"><b>ตอบ:</b> ${q.a}) ${q.options[q.a]}</p>
+                        <p class="text-xs text-gray-500 mt-1 italic"><b>เหตุผล:</b> ${q.exp}</p>
+                    </div>`;
+            });
+        };
+
+        const downloadCSV = async () => {
+            const passInput = document.getElementById('admin-pass').value;
+            if (passInput !== ADMIN_PASSWORD) return showAlert("รหัสผ่านไม่ถูกต้อง");
+
+            const btn = document.getElementById('download-btn');
+            btn.disabled = true;
+            btn.innerText = "กำลังดึงข้อมูล...";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'scores'));
+                const data = [];
+                querySnapshot.forEach(doc => {
+                    const item = doc.data();
+                    data.push({
+                        "Name": item.name,
+                        "Student ID": item.studentId,
+                        "Score": item.score,
+                        "Date": item.timestamp?.toDate().toLocaleString('th-TH') || "N/A"
+                    });
+                });
+
+                if (data.length === 0) {
+                    showAlert("ยังไม่มีข้อมูลผู้สอบ");
+                    btn.disabled = false;
+                    btn.innerText = "ดาวน์โหลด CSV";
+                    return;
+                }
+
+                // Convert to CSV
+                const headers = Object.keys(data[0]);
+                const csvContent = [
+                    headers.join(","),
+                    ...data.map(row => headers.map(h => `"${row[h]}"`).join(","))
+                ].join("\n");
+
+                // Download
+                const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `quiz_results_${new Date().toLocaleDateString()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toggleAdminModal(false);
+                document.getElementById('admin-pass').value = '';
+            } catch (e) {
+                console.error(e);
+                showAlert("เกิดข้อผิดพลาดในการดึงข้อมูล");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "ดาวน์โหลด CSV";
+            }
+        };
+
+        document.getElementById('download-btn').onclick = downloadCSV;
+
+        function showAlert(text) {
+            const box = document.getElementById('custom-alert');
+            document.getElementById('alert-text').innerText = text;
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
