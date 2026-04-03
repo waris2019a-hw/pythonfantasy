@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Fantasy - Knight's Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap');
+        
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        
+        .parchment-bg {
+            background: #e7d8c3;
+            background-image: radial-gradient(#dcc9af 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .wood-frame {
+            border: 12px solid #5d4037;
+            border-image: linear-gradient(to bottom, #5d4037, #3e2723) 1;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2), 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .bolt {
+            position: absolute; width: 12px; height: 12px;
+            background: #9e9e9e; border-radius: 50%;
+            border: 2px solid #616161; box-shadow: inset -2px -2px 2px rgba(0,0,0,0.5);
+        }
+
+        .equipment-slot {
+            width: 52px; height: 52px;
+            border: 3px solid #bcaaa4; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.05); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .equipment-slot.active {
+            border-color: #fbbf24; background: rgba(251, 191, 36, 0.15);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); transform: scale(1.1);
+        }
+
+        .item-locked { filter: grayscale(1) opacity(0.15); }
+        .avatar-glow { filter: drop-shadow(0 0 25px rgba(59, 130, 246, 0.4)); }
+        .modal-bg { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); }
+        .lesson-active { background-color: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        #console-output { background-color: #0f172a; color: #10b981; }
+        
+        @keyframes shine { 0% { left: -100%; } 100% { left: 100%; } }
+        .shine-effect { position: relative; overflow: hidden; }
+        .shine-effect::after {
+            content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+            transform: skewX(-25deg); animation: shine 3s infinite;
+        }
+        
+        .scroll-hidden::-webkit-scrollbar { width: 4px; }
+        .scroll-hidden::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- ส่วนโหลดข้อมูล -->
+    <div id="loader" class="fixed inset-0 bg-slate-950 z-[9999] flex flex-col items-center justify-center text-white">
+        <div class="relative w-24 h-24 mb-6">
+            <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-t-indigo-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-4xl"><i class="fab fa-python"></i></div>
+        </div>
+        <p class="text-xl font-bold animate-pulse" id="loader-text">กำลังรวบรวมพลังเวทย์จาก Cloudflare D1...</p>
+    </div>
+
+    <!-- หน้าต่างลงทะเบียน -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border-t-8 border-indigo-600">
+            <div class="flex justify-center mb-6">
+                <div class="w-20 h-20 bg-indigo-100 rounded-2xl flex items-center justify-center text-5xl text-indigo-600 shadow-inner">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+            </div>
+            <h2 class="text-3xl font-black text-center text-slate-800 mb-2 uppercase italic tracking-tight">Knight Registration</h2>
+            <p class="text-center text-slate-500 mb-8 font-medium">เริ่มต้นตำนานอัศวินผู้พิทักษ์แห่ง D1 Database</p>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-black uppercase text-slate-400 mb-4 tracking-[0.2em] text-center">เลือกสายอาชีพ</label>
+                    <div class="grid grid-cols-4 gap-3" id="avatar-selector">
+                        <div onclick="selectAvatar('🧙‍♂️')" class="avatar-option p-3 rounded-2xl text-4xl text-center bg-slate-50 hover:bg-purple-50 cursor-pointer border-2 border-transparent transition" data-val="🧙‍♂️">🧙‍♂️</div>
+                        <div onclick="selectAvatar('🛡️')" class="avatar-option p-3 rounded-2xl text-4xl text-center bg-slate-50 hover:bg-blue-50 cursor-pointer border-2 border-transparent transition" data-val="🛡️">🛡️</div>
+                        <div onclick="selectAvatar('⚔️')" class="avatar-option p-3 rounded-2xl text-4xl text-center bg-slate-50 hover:bg-red-50 cursor-pointer border-2 border-transparent transition" data-val="⚔️">⚔️</div>
+                        <div onclick="selectAvatar('🔮')" class="avatar-option p-3 rounded-2xl text-4xl text-center bg-slate-50 hover:bg-indigo-50 cursor-pointer border-2 border-transparent transition" data-val="🔮">🔮</div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-widest">นามของอัศวิน</label>
+                    <input type="text" id="username-input" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 outline-none transition font-bold text-lg" placeholder="กรอกชื่อของคุณ">
+                </div>
+                <button id="login-btn" onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-200 transition-all">เริ่มการผจญภัย</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนแอปหลัก -->
+    <div id="app" class="hidden flex flex-col h-screen overflow-hidden">
+        <header class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fab fa-python text-xl"></i></div>
+                <h1 class="text-xl font-black text-slate-800 uppercase italic tracking-tighter">Python <span class="text-indigo-600">Fantasy</span></h1>
+            </div>
+            <div class="flex items-center space-x-2 md:space-x-4">
+                <div onclick="toggleLeaderboard(true)" class="hidden sm:flex bg-amber-50 hover:bg-amber-100 text-amber-700 p-2 px-3 rounded-xl border border-amber-200 cursor-pointer transition-all items-center space-x-2">
+                    <i class="fas fa-trophy"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Leaderboard</span>
+                </div>
+                <div onclick="toggleEquipment(true)" class="flex items-center space-x-3 bg-slate-50 hover:bg-indigo-50 p-1.5 pr-4 rounded-2xl border border-slate-100 cursor-pointer transition-all active:scale-95">
+                    <div id="display-avatar" class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-3xl border">🧙‍♂️</div>
+                    <div class="hidden md:block">
+                        <p class="font-bold text-slate-900 text-sm leading-none" id="display-name">Guest</p>
+                        <p class="text-[9px] text-indigo-500 font-black uppercase tracking-widest mt-1" id="display-rank">Novice</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end">
+                    <div class="text-indigo-600 font-black text-sm"><i class="fas fa-bolt mr-1 text-amber-500"></i> <span id="display-score">0</span> XP</div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleEquipment(true)" class="text-[9px] font-black text-slate-400 uppercase hover:text-indigo-600 transition-colors">Inventory</button>
+                        <span class="text-slate-300">|</span>
+                        <button onclick="handleLogout()" class="text-[9px] font-black text-red-400 uppercase hover:text-red-600 transition-colors"><i class="fas fa-sign-out-alt mr-1"></i>Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden">
+            <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-30 shadow-sm shrink-0">
+                <div class="p-4 flex-1 overflow-y-auto scroll-hidden">
+                    <div class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 px-2">Journey Map</div>
+                    <nav class="space-y-1.5" id="lesson-menu"></nav>
+                </div>
+                <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Equipment</span>
+                        <span id="mini-progress" class="text-[10px] font-bold text-indigo-600">0/12</span>
+                    </div>
+                    <div id="equipment-preview" class="grid grid-cols-6 gap-1.5 px-1"></div>
+                </div>
+            </aside>
+
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/30 scroll-hidden">
+                <div class="max-w-4xl mx-auto space-y-8 pb-32">
+                    <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="bg-indigo-100 text-indigo-600 text-[10px] font-black px-2 py-1 rounded-md uppercase" id="lesson-tag">Quest 01</span>
+                            </div>
+                            <h2 class="text-3xl md:text-4xl font-black text-slate-900 mb-2" id="lesson-title">บทเรียน</h2>
+                            <p class="text-slate-500 text-lg font-medium" id="lesson-desc">รายละเอียดภารกิจ</p>
+                        </div>
+                        
+                        <div class="bg-slate-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden shrink-0 w-full md:w-64">
+                            <h5 class="text-[9px] font-black uppercase text-slate-400 mb-3 tracking-widest">Quest Reward</h5>
+                            <div class="flex items-center space-x-4">
+                                <div id="reward-icon" class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl border border-white/10 shine-effect shrink-0">🗺️</div>
+                                <div class="overflow-hidden">
+                                    <p class="text-[9px] text-slate-400 uppercase font-bold leading-none mb-1">New Item</p>
+                                    <p id="reward-name" class="text-md font-black text-indigo-400 truncate">ไอเทม</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600"><i class="fas fa-scroll"></i></div>
+                                <h3 class="text-xl font-black text-slate-800 uppercase italic">ม้วนคัมภีร์ความรู้</h3>
+                            </div>
+                            <a id="lesson-resource-link" href="#" target="_blank" class="flex items-center space-x-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs font-black uppercase border border-amber-200 hover:bg-amber-100 transition-all shadow-sm">
+                                <i class="fas fa-book-open"></i>
+                                <span>ศึกษาตำราฉบับเต็ม</span>
+                            </a>
+                        </div>
+                        <div id="lesson-text" class="text-slate-600 leading-relaxed text-base prose prose-indigo max-w-none"></div>
+                    </div>
+
+                    <div class="rounded-3xl overflow-hidden shadow-2xl bg-slate-900 aspect-video ring-8 ring-white">
+                        <iframe id="lesson-video" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+
+                    <div class="space-y-6 pt-8">
+                        <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col ring-8 ring-slate-100">
+                            <div class="bg-slate-800 px-6 py-3 flex justify-between items-center border-b border-slate-700">
+                                <span class="text-[10px] code-font text-slate-400">the-forge.py</span>
+                                <div class="flex space-x-2">
+                                    <button onclick="askAI('explain')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all">Analyze</button>
+                                    <button onclick="runCode()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">Forge Code</button>
+                                </div>
+                            </div>
+                            <textarea id="code-editor" class="flex-1 p-6 code-font text-sm bg-slate-950 text-indigo-100 focus:outline-none min-h-[300px] resize-none" spellcheck="false"></textarea>
+                        </div>
+
+                        <div id="ai-panel" class="hidden bg-white border-2 border-purple-100 rounded-3xl p-8 shadow-xl animate-in slide-in-from-bottom-4 ring-8 ring-purple-50">
+                            <div id="ai-response" class="text-purple-950 text-base leading-relaxed whitespace-pre-wrap font-medium p-6"></div>
+                        </div>
+
+                        <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col ring-8 ring-slate-100">
+                            <div class="bg-slate-800 px-6 py-3 border-b border-slate-700 flex justify-between items-center">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Forge Output</span>
+                                <button id="ai-fix-btn" onclick="askAI('fix')" class="hidden bg-red-500/20 text-red-400 px-3 py-1 rounded-md text-[9px] font-black uppercase">Fix with Sage</button>
+                            </div>
+                            <pre id="console-output" class="flex-1 p-6 code-font text-sm overflow-auto min-h-[150px]"></pre>
+                        </div>
+                    </div>
+
+                    <div id="quiz-card" class="bg-white rounded-[40px] p-10 shadow-2xl border-2 border-slate-100 relative overflow-hidden transition-all duration-500">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-8">
+                                <h3 class="text-2xl md:text-3xl font-black text-slate-900 uppercase italic">บททดสอบฝีมือ ⚔️</h3>
+                                <div class="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">Phase <span id="quiz-current-num">1</span>/3</div>
+                            </div>
+                            <p id="quiz-question" class="text-lg md:text-xl mb-10 font-bold text-slate-700 max-w-2xl"></p>
+                            <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                            <div class="mt-12 h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
+                                <div id="quiz-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="leaderboard-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 modal-bg">
+        <div class="bg-white rounded-[40px] max-w-xl w-full p-8 shadow-2xl relative overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-black text-slate-800 uppercase italic">🏆 Hall of Fame</h2>
+                <div class="flex items-center space-x-3">
+                    <button id="admin-lock-btn" onclick="toggleAdminPanel()" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center">
+                        <i id="lock-icon" class="fas fa-lock"></i>
+                    </button>
+                    <button onclick="toggleLeaderboard(false)" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <!-- Admin Pass UI -->
+            <div id="admin-auth-box" class="hidden mb-6 p-4 bg-indigo-50 rounded-2xl border-2 border-indigo-100 animate-in slide-in-from-top-2">
+                <p class="text-[10px] font-black uppercase text-indigo-400 mb-2 tracking-widest text-center">Ancient Credentials Required</p>
+                <div class="flex space-x-2">
+                    <input type="password" id="admin-pass-input" class="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300 font-bold" placeholder="กรอกรหัสลับ...">
+                    <button onclick="verifyAdmin()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase hover:bg-indigo-700 transition-all">Verify</button>
+                </div>
+            </div>
+
+            <div id="leaderboard-list" class="space-y-3 overflow-y-auto pr-2 scroll-hidden flex-1 min-h-[300px]"></div>
+            <div id="admin-status" class="hidden mt-4 text-center text-[10px] font-bold text-indigo-600 uppercase animate-pulse">Admin Mode Active</div>
+        </div>
+    </div>
+
+    <div id="equipment-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center p-4 modal-bg">
+        <div class="wood-frame parchment-bg rounded-lg max-w-3xl w-full p-1 shadow-2xl relative">
+            <div class="border-4 border-[#3e2723]/30 m-2 p-6 flex flex-col items-center">
+                <h2 class="text-2xl font-black text-[#3e2723] mb-6 uppercase tracking-[0.3em] italic">ARMORY</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+                    <div class="space-y-4" id="inventory-left"></div>
+                    <div class="flex flex-col items-center justify-center">
+                        <div id="large-avatar" class="text-[100px] leading-none mb-4 avatar-glow">🧙‍♂️</div>
+                        <div class="text-center bg-[#3e2723]/5 px-4 py-2 rounded-xl border border-[#3e2723]/10 w-full">
+                            <h3 id="char-name" class="text-lg font-black text-[#3e2723]">Name</h3>
+                            <p id="char-rank" class="text-[10px] text-[#5d4037] font-bold uppercase tracking-widest">Novice</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4" id="inventory-right"></div>
+                </div>
+                <div class="flex space-x-4 mt-8">
+                    <button onclick="toggleEquipment(false)" class="bg-[#3e2723] text-white font-black py-3 px-8 rounded-xl text-xs uppercase">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG & D1 ---
+        const d1ApiKey = "ed331673-c7e4-4d2d-95ff-2b116c3c3cd4";
+        const d1DbName = "studentscore";
+        const apiKey = ""; 
+        const adminPass = "admin1234";
+
+        let localUid = localStorage.getItem('knight_uid') || 'knight_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('knight_uid', localUid);
+
+        // บทเรียน 12 บท พร้อมลิงก์ที่อัปเดตใหม่
+        const lessons = [
+            { id: 1, tag: "Quest 01", title: "ปฐมบทแห่งอัศวิน", desc: "แนะนำรายวิชา", itemName: "เข็มทิศทองคำ", itemIcon: "🧭", video: "https://www.youtube.com/embed/ZV3-iiMW0q8", resourceUrl: "https://drive.google.com/drive/folders/1D5o2CYQ0chGIxNoRPeNH3mCxYGVIyg7h?usp=sharing", text: "<p>ยินดีต้อนรับสู่ Python Fantasy! ท่านคืออัศวินที่ถูกเลือกให้มาฝึกฝนศาสตร์แห่งมนตรา Python เพื่อปกป้องอาณาจักร</p>", initCode: "print('ข้าพร้อมรับการฝึกฝนแล้ว!')", quizzes: [{q: "ภาษาหลักที่เราศึกษาคือ?", options: ["Java", "C#", "Python", "Ruby"], ans: 2}, {q: "Condition คืออะไร?", options: ["การวนซ้ำ", "เงื่อนไข", "ชื่อ", "รูป"], ans: 1}, {q: "Loop คืออะไร?", options: ["ซ้ำ", "หยุด", "ข้าม", "จบ"], ans: 0}] },
+            { id: 2, tag: "Quest 02", title: "แผนที่ยุทธศาสตร์", desc: "วางแผน Flowchart", itemName: "แผนที่ยุทธวิธี", itemIcon: "🗺️", video: "https://www.youtube.com/embed/Q0o_vpFu3yo", resourceUrl: "https://drive.google.com/drive/folders/1IN4WLmNjbs3y3HrSkpGjcxdKQeEYIeGm?usp=sharing", text: "<p>ลำดับความคิดก่อนการเขียนโปรแกรมด้วย Flowchart จะช่วยให้อัศวินมองเห็นเส้นทางที่ชัดเจน</p>", initCode: "x = 10\nprint('พิกัด X:', x)", quizzes: [{q: "Diamond ใน Flowchart คือ?", options: ["เริ่ม", "ตัดสินใจ", "จบ", "คำนวณ"], ans: 1}, {q: "Oval คือ?", options: ["เริ่ม/จบ", "รัน", "เดิน", "บวก"], ans: 0}, {q: "Rectangle คือ?", options: ["ตัดสินใจ", "ประมวลผล", "รับข้อมูล", "จบ"], ans: 1}] },
+            { id: 3, tag: "Quest 03", title: "เสียงประกาศ (Print)", desc: "คำสั่งแสดงผล", itemName: "แตรศึก", itemIcon: "📢", video: "https://www.youtube.com/embed/nJslfXaHKXA", resourceUrl: "https://drive.google.com/drive/folders/1M1BBMnqCgfJ8Jv4zObNtceL1l0bGb3eJ?usp=drive_link", text: "<p>คำสั่ง print() คือหัวใจของการแสดงตัวตนของมนตราสู่โลกภายนอก</p>", initCode: "print('เพื่อเกียรติยศ!')", quizzes: [{q: "คำสั่งแสดงผลคือ?", options: ["speak", "print", "shout", "display"], ans: 1}, {q: "print(10+5) ได้?", options: ["105", "15", "Error", "None"], ans: 1}, {q: "ข้อความต้องครอบด้วย?", options: ["( )", "' '", "[ ]", "{ }"], ans: 1}] },
+            { id: 4, tag: "Quest 04", title: "คลังอาวุธ (Variables)", desc: "ตัวแปร variable", itemName: "ถุงเป้เดินทาง", itemIcon: "🎒", video: "https://www.youtube.com/embed/BPjgxs7bwec", resourceUrl: "https://drive.google.com/drive/folders/18S1d4_adg4zP2RyyXkfH3vBjXDegPihH?usp=drive_link", text: "<p>ตัวแปรคือที่เก็บค่าพลังและข้อมูลต่างๆ ที่อัศวินรวบรวมมาได้</p>", initCode: "power = 100\nprint(power)", quizzes: [{q: "x = 10 คือ?", options: ["x น้อย", "เก็บ 10", "x ลบ", "x เท่า"], ans: 1}, {q: "ห้ามขึ้นด้วย?", options: ["ตัวอักษร", "ตัวเลข", "ขีด", "ใหญ่"], ans: 1}, {q: "ชนิดข้อความ?", options: ["Int", "String", "Bool", "Float"], ans: 1}] },
+            { id: 5, tag: "Quest 05", title: "ศาสตร์การคำนวณ", desc: "เครื่องหมาย Operator", itemName: "ลูกคิดยุทธการ", itemIcon: "🧮", video: "https://www.youtube.com/embed/rF_Bw8qVsZI", resourceUrl: "https://drive.google.com/drive/folders/1xb_gJiLaM9VC3B3SONc2puiLF4BZru3b?usp=drive_link", text: "<p>การคำนวณทรัพยากรและพลังทำลายล้างด้วยเครื่องหมายทางคณิตศาสตร์</p>", initCode: "print(5 * 5)", quizzes: [{q: "ยกกำลังใช้?", options: ["^", "*", "**", "&"], ans: 2}, {q: "หารเอาเศษใช้?", options: ["/", "//", "%", "mod"], ans: 2}, {q: "2 + 3 * 4?", options: ["20", "14", "9", "11"], ans: 1}] },
+            { id: 6, tag: "Quest 06", title: "ทางเลือก (Condition)", desc: "เงื่อนไข If-Else", itemName: "โล่สะท้อนสัจจะ", itemIcon: "🛡️", video: "https://www.youtube.com/embed/lahUdF1vnuE", resourceUrl: "https://drive.google.com/drive/folders/1J8_btaVPkm-ddp7br0LfErws9S1Pc2mO?usp=drive_link", text: "<p>อัศวินต้องรู้จักตัดสินใจเลือกทางเดินผ่านเงื่อนไข If-Else</p>", initCode: "if True: print('Yes')", quizzes: [{q: "เงื่อนไขรองใช้?", options: ["other", "elif", "another", "case"], ans: 1}, {q: "เท็จไปที่ไหน?", options: ["if", "elif", "else", "break"], ans: 2}, {q: "True/False คือ?", options: ["Str", "Int", "Bool", "Float"], ans: 2}] },
+            { id: 7, tag: "Quest 07", title: "การฝึกฝน (Loop)", desc: "การวนซ้ำ", itemName: "นาฬิกาทรายนิรันดร์", itemIcon: "⏳", video: "https://www.youtube.com/embed/5ZZX8m0pPHo", resourceUrl: "https://drive.google.com/drive/folders/12WmzkxBonilMcRIodM-i-1JFDtMsdsCU?usp=drive_link", text: "<p>การทำซ้ำคือหัวใจของการฝึกฝนกระบวนท่าให้ชำนาญ</p>", initCode: "for i in range(5): print(i)", quizzes: [{q: "range(5) วนกี่รอบ?", options: ["4", "5", "6", "0"], ans: 1}, {q: "while(True) คือ?", options: ["ไม่รัน", "ไม่รู้จบ", "Error", "1รอบ"], ans: 1}, {q: "วนซ้ำตามจำนวนรอบใช้?", options: ["for", "while", "repeat", "if"], ans: 0}] },
+            { id: 8, tag: "Quest 08", title: "กระบวนท่า (Function)", desc: "ฟังก์ชัน", itemName: "คัมภีร์ลับ", itemIcon: "📜", video: "https://www.youtube.com/embed/7JO8wBiKemw", resourceUrl: "https://drive.google.com/drive/folders/1x_IbaGj2tl0evm3FHL2WPOkVySDt9Gk0?usp=drive_link", text: "<p>รวบรวมมนตราหลายบรรทัดให้เป็นกระบวนท่าเดียวที่เรียกใช้ได้ทุกเมื่อ</p>", initCode: "def skill(): print('Slash!')\nskill()", quizzes: [{q: "คำประกาศฟังก์ชัน?", options: ["func", "def", "create", "f"], ans: 1}, {q: "ส่งค่ากลับใช้?", options: ["send", "give", "return", "out"], ans: 2}, {q: "Parameter อยู่ใน?", options: ["( )", "[ ]", "{ }", "< >"], ans: 0}] },
+            { id: 9, tag: "Quest 09", title: "หีบสมบัติ (List)", desc: "List Tuple Dictionary", itemName: "หีบเก็บไอเทม", itemIcon: "📦", video: "https://www.youtube.com/embed/7fCdlBRlQGM", resourceUrl: "https://drive.google.com/drive/folders/1QSHjcAaUyn_1fC3ed6wHclji0z3P-IBZ?usp=drive_link", text: "<p>การจัดการคลังแสงและไอเทมจำนวนมากด้วยโครงสร้างข้อมูลแบบ List, Tuple และ Dictionary</p>", initCode: "items = ['sword', 'shield']", quizzes: [{q: "List ใช้วงเล็บ?", options: ["( )", "[ ]", "{ }", "< >"], ans: 1}, {q: "Key-Value คือ?", options: ["List", "Tuple", "Dict", "Set"], ans: 2}, {q: "แก้ไขไม่ได้คือ?", options: ["List", "Tuple", "Dict", "Array"], ans: 1}] },
+            { id: 10, tag: "Quest 10", title: "อาณาจักรมายา (GUI)", desc: "Gui Development", itemName: "ลูกแก้ววิเศษ", itemIcon: "🔮", video: "https://www.youtube.com/embed/aAdb5MQc2AI", resourceUrl: "", text: "<p>สร้างหน้าต่างมนตราเพื่อให้ผู้คนในอาณาจักรเข้าถึงเวทมนตร์ของอัศวินได้ง่ายขึ้น</p>", initCode: "import tkinter as tk", quizzes: [{q: "GUI คือ?", options: ["Global", "Graphical", "General", "Gold"], ans: 1}, {q: "Library มาตรฐาน?", options: ["math", "tkinter", "os", "sys"], ans: 1}, {q: "ปุ่มกดเรียก?", options: ["Label", "Entry", "Button", "Box"], ans: 2}] },
+            { id: 11, tag: "Quest 11", title: "การพิสูจน์ (Testing)", desc: "Unit Testing", itemName: "แว่นขยายทองคำ", itemIcon: "🔍", video: "https://www.youtube.com/embed/86rD8fBski0", resourceUrl: "https://drive.google.com/drive/folders/1ZQvtKP6Mu8vZCB_xWgRh2RuHhgj8luSc?usp=drive_link", text: "<p>มนตราที่สมบูรณ์แบบต้องผ่านการทดสอบความถูกต้องอย่างเข้มงวด</p>", initCode: "assert 1+1 == 2", quizzes: [{q: "เป้าหมาย Test?", options: ["เขียนโค้ด", "ความถูกต้อง", "ช้าลง", "ลบโค้ด"], ans: 1}, {q: "เช็คค่าจริงใช้?", options: ["check", "assert", "verify", "is"], ans: 1}, {q: "สีที่ผ่านคือ?", options: ["แดง", "เหลือง", "เขียว", "น้ำเงิน"], ans: 2}] },
+            { id: 12, tag: "Quest 12", title: "กำจัดปีศาจ (Debug)", desc: "Debugging", itemName: "ไม้กวาดศักดิ์สิทธิ์", itemIcon: "🧹", video: "https://www.youtube.com/embed/WA48SEgYgQU", resourceUrl: "https://drive.google.com/drive/folders/1TSR-Crj_YRUUqKdZpaVB0tfVkL_z39YN?usp=drive_link", text: "<p>การปัดเป่าแมลง (Bug) ที่มาขัดขวางการทำงานของมนตราด้วยทักษะ Debugging</p>", initCode: "print('Bug free!')", quizzes: [{q: "Debug คือ?", options: ["เขียนใหม่", "หา/แก้ผิด", "แฮก", "ลบไฟล์"], ans: 1}, {q: "SyntaxError คือ?", options: ["ตรรกะ", "ไวยากรณ์", "เน็ต", "ร้อน"], ans: 1}, {q: "คำสั่งหาจุดผิดพื้นฐาน?", options: ["print", "exit", "del", "run"], ans: 0}] }
+        ];
+
+        let currentUser = { id: localUid, name: 'Guest', avatar: '🧙‍♂️', score: 0, rank: 'Novice', completed: [], inventory: [] };
+        let currentIdx = 0; let quizIdx = 0; let pyodide = null;
+        let isAdmin = false;
+
+        // --- Database & Logic ---
+        async function queryD1(sql, params = []) {
+            // ในที่นี้จำลอง SQL ลงใน Log (ในระบบจริงจะยิงไป Cloudflare Worker)
+            console.log("SQL Execute:", sql, params);
+            return { success: true };
+        }
+
+        async function syncPlayerData() {
+            localStorage.setItem('knight_data_' + currentUser.id, JSON.stringify(currentUser));
+            await queryD1(`INSERT OR REPLACE INTO studentscore...`, [currentUser.id, currentUser.name, currentUser.score]);
+        }
+
+        async function loadPlayerData() {
+            const saved = localStorage.getItem('knight_data_' + localUid);
+            if (saved) {
+                Object.assign(currentUser, JSON.parse(saved));
+                updateRank();
+                if (currentUser.name !== 'Guest') {
+                    document.getElementById('login-modal').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    loadLesson(0);
+                }
+            }
+        }
+
+        window.onload = async () => {
+            pyodide = await loadPyodide();
+            await loadPlayerData();
+            document.getElementById('loader').style.display = 'none';
+        };
+
+        function selectAvatar(emoji) {
+            currentUser.avatar = emoji;
+            document.querySelectorAll('.avatar-option').forEach(el => {
+                el.classList.toggle('border-indigo-500', el.dataset.val === emoji);
+                el.classList.toggle('bg-indigo-50', el.dataset.val === emoji);
+            });
+        }
+
+        async function handleLogin() {
+            const name = document.getElementById('username-input').value.trim();
+            if (!name) return;
+            currentUser.name = name;
+            await syncPlayerData();
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            loadLesson(0);
+        }
+
+        function handleLogout() {
+            const nextUid = 'knight_' + Math.random().toString(36).substr(2, 9);
+            localUid = nextUid;
+            localStorage.setItem('knight_uid', localUid);
+            currentUser = { id: localUid, name: 'Guest', avatar: '🧙‍♂️', score: 0, rank: 'Novice', completed: [], inventory: [] };
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('username-input').value = "";
+            updateUI();
+        }
+
+        // --- Admin Mode Logic ---
+        function toggleAdminPanel() {
+            if (isAdmin) {
+                isAdmin = false;
+                document.getElementById('admin-status').classList.add('hidden');
+                document.getElementById('admin-auth-box').classList.add('hidden');
+                document.getElementById('lock-icon').className = "fas fa-lock";
+                refreshLeaderboard();
+                return;
+            }
+            const box = document.getElementById('admin-auth-box');
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                document.getElementById('admin-pass-input').focus();
+            }
+        }
+
+        function verifyAdmin() {
+            const input = document.getElementById('admin-pass-input');
+            if (input.value === adminPass) {
+                isAdmin = true;
+                document.getElementById('admin-status').classList.remove('hidden');
+                document.getElementById('admin-auth-box').classList.add('hidden');
+                document.getElementById('lock-icon').className = "fas fa-lock-open text-indigo-600";
+                input.value = "";
+                refreshLeaderboard();
+                showGrantFeedback(0, "✅ ระบบแอดมินเปิดใช้งาน");
+            } else {
+                showGrantFeedback(0, "❌ รหัสผ่านไม่ถูกต้อง");
+                input.classList.add('border-red-500', 'animate-shake');
+                setTimeout(() => input.classList.remove('border-red-500', 'animate-shake'), 1000);
+            }
+        }
+
+        async function deletePlayer(id, name) {
+            if (!isAdmin) return;
+            if (confirm(`⚠️ คำเตือน: คุณต้องการลบข้อมูลของ "${name}" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนคืนได้`)) {
+                // 1. ลบจาก localStorage (ถ้าเป็นผู้เล่นจริง)
+                localStorage.removeItem('knight_data_' + id);
+                
+                // 2. ถ้าเป็น Bot ให้จำไว้ใน sessionStorage ว่าถูกลบไปแล้ว เพื่อไม่ให้ Re-spawn
+                if (id.startsWith('bot')) {
+                    const deletedBots = JSON.parse(sessionStorage.getItem('deleted_bots') || '[]');
+                    deletedBots.push(id);
+                    sessionStorage.setItem('deleted_bots', JSON.stringify(deletedBots));
+                }
+
+                // 3. จำลองการยิง SQL ลบใน D1
+                await queryD1(`DELETE FROM studentscore WHERE id = ?`, [id]);
+                
+                showGrantFeedback(0, `🗑️ ลบข้อมูลของ ${name} เรียบร้อยแล้ว`);
+                refreshLeaderboard();
+            }
+        }
+
+        // --- Core Game Functions ---
+        function updateRank() {
+            if (currentUser.score >= 5000) currentUser.rank = "Knight Legend 👑";
+            else if (currentUser.score >= 2000) currentUser.rank = "Knight 🧙";
+            else if (currentUser.score >= 500) currentUser.rank = "Squire 🛡️";
+            else currentUser.rank = "Novice";
+        }
+
+        function updateUI() {
+            document.getElementById('display-name').innerText = currentUser.name;
+            document.getElementById('display-score').innerText = currentUser.score;
+            document.getElementById('display-avatar').innerText = currentUser.avatar;
+            document.getElementById('display-rank').innerText = currentUser.rank;
+            const menu = document.getElementById('lesson-menu');
+            menu.innerHTML = lessons.map((l, i) => `
+                <button onclick="loadLesson(${i})" class="w-full text-left p-3 rounded-2xl transition-all text-sm font-bold flex items-center space-x-3 ${i === currentIdx ? 'lesson-active' : 'hover:bg-slate-50 text-slate-500'}">
+                    <span class="w-6 h-6 rounded-lg ${i === currentIdx ? 'bg-white/20' : 'bg-slate-100'} flex items-center justify-center text-[10px]">${i+1}</span>
+                    <span class="flex-1 truncate">${l.title}</span>
+                    ${currentUser.completed.includes(l.id) ? '<i class="fas fa-check-circle text-green-500 ml-auto"></i>' : ''}
+                </button>`).join('');
+
+            document.getElementById('equipment-preview').innerHTML = lessons.map(l => `
+                <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-base shadow-sm ${currentUser.inventory.includes(l.id) ? '' : 'item-locked'}">${l.itemIcon}</div>
+            `).join('');
+            document.getElementById('mini-progress').innerText = `${currentUser.inventory.length}/12`;
+        }
+
+        function loadLesson(idx) {
+            currentIdx = idx; quizIdx = 0; const l = lessons[idx];
+            document.getElementById('lesson-tag').innerText = l.tag;
+            document.getElementById('lesson-title').innerText = l.title;
+            document.getElementById('lesson-desc').innerText = l.desc;
+            document.getElementById('lesson-text').innerHTML = l.text;
+            document.getElementById('lesson-video').src = l.video;
+            document.getElementById('code-editor').value = l.initCode;
+            document.getElementById('reward-name').innerText = l.itemName;
+            document.getElementById('reward-icon').innerText = l.itemIcon;
+            
+            const resLink = document.getElementById('lesson-resource-link');
+            if(l.resourceUrl) {
+                resLink.href = l.resourceUrl;
+                resLink.style.display = "flex";
+            } else {
+                resLink.style.display = "none";
+            }
+
+            document.getElementById('console-output').innerText = "";
+            document.getElementById('ai-panel').classList.add('hidden');
+            renderQuiz(); updateUI();
+        }
+
+        function renderQuiz() {
+            const l = lessons[currentIdx]; const q = l.quizzes[quizIdx];
+            document.getElementById('quiz-current-num').innerText = quizIdx + 1;
+            document.getElementById('quiz-question').innerText = q.q;
+            document.getElementById('quiz-options').innerHTML = q.options.map((opt, i) => `
+                <button onclick="checkQuiz(${i})" class="group bg-slate-50 hover:bg-white hover:border-indigo-400 border-2 border-slate-100 p-4 rounded-2xl transition-all text-left font-bold text-slate-700 flex items-center">
+                    <span class="inline-block w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white text-center mr-3 leading-8 shrink-0">${String.fromCharCode(65 + i)}</span>
+                    <span class="text-sm">${opt}</span>
+                </button>`).join('');
+            document.getElementById('quiz-progress-bar').style.width = (quizIdx / 3 * 100) + "%";
+        }
+
+        async function runCode() {
+            const out = document.getElementById('console-output'); 
+            out.innerText = "กำลังร่ายมนตรา...";
+            try {
+                await pyodide.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
+                await pyodide.runPythonAsync(document.getElementById('code-editor').value);
+                const res = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+                out.innerText = res || "มนตราทำงานเสร็จสิ้น!";
+                out.className = "p-4 code-font text-sm text-green-400";
+                if (!currentUser.completed.includes(lessons[currentIdx].id)) showGrantFeedback(10, "เริ่มภารกิจสำเร็จ!");
+            } catch (err) { 
+                out.innerText = err.message; out.className = "p-4 code-font text-sm text-red-400";
+                document.getElementById('ai-fix-btn').classList.remove('hidden');
+            }
+        }
+
+        function checkQuiz(choice) {
+            const l = lessons[currentIdx];
+            if (choice === l.quizzes[quizIdx].ans) {
+                currentUser.score += 100;
+                updateRank();
+                showGrantFeedback(100, "ถูกต้อง!");
+                if (quizIdx < 2) { quizIdx++; setTimeout(renderQuiz, 500); }
+                else { 
+                    if (!currentUser.completed.includes(l.id)) { currentUser.completed.push(l.id); currentUser.inventory.push(l.id); showItemModal(l); }
+                    syncPlayerData(); updateUI();
+                }
+            } else {
+                const btn = document.getElementById('quiz-options').children[choice];
+                btn.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => btn.classList.remove('border-red-500', 'bg-red-50'), 1000);
+            }
+        }
+
+        function showItemModal(l) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 z-[100] flex items-center justify-center modal-bg animate-in fade-in zoom-in duration-300 p-4";
+            modal.innerHTML = `<div class="bg-white rounded-[40px] p-12 text-center shadow-2xl border-4 border-amber-400 max-w-sm w-full relative overflow-hidden"><div class="absolute inset-0 shine-effect opacity-10 pointer-events-none"></div><div class="text-9xl mb-8 animate-bounce">${l.itemIcon}</div><h2 class="text-3xl font-black text-slate-900 mb-2 italic uppercase">ได้รับไอเทม!</h2><p class="text-slate-500 mb-8">ท่านได้รับ <span class="text-indigo-600 font-bold">"${l.itemName}"</span></p><button onclick="this.parentElement.parentElement.remove(); toggleEquipment(true);" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl uppercase shadow-lg shadow-indigo-200 active:scale-95 transition-all">ตรวจสอบคลังอาวุธ</button></div>`;
+            document.body.appendChild(modal);
+        }
+
+        function showGrantFeedback(pts, msg) {
+            const el = document.createElement('div');
+            el.className = "fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-[120] font-black animate-in slide-in-from-bottom-4 flex items-center space-x-3 border border-indigo-500/30";
+            el.innerHTML = `<i class="fas fa-certificate text-amber-400"></i> <span>${msg} ${pts > 0 ? '(+'+pts+' XP)' : ''}</span>`;
+            document.body.appendChild(el); 
+            setTimeout(() => { el.classList.add('animate-out', 'fade-out', 'slide-out-to-bottom-4'); setTimeout(() => el.remove(), 500); }, 2500);
+        }
+
+        function refreshLeaderboard() {
+            const players = [];
+            const deletedBots = JSON.parse(sessionStorage.getItem('deleted_bots') || '[]');
+
+            // ดึงข้อมูลจริงจาก localStorage
+            for(let i=0; i<localStorage.length; i++){
+                const key = localStorage.key(i);
+                if(key.startsWith('knight_data_')){ players.push(JSON.parse(localStorage.getItem(key))); }
+            }
+
+            // เพิ่มบอท (เฉพาะที่ไม่โดนลบ)
+            if(!deletedBots.includes('bot1')) players.push({ id: 'bot1', name: "Merlin", score: 6000, avatar: "🧙‍♂️", rank: "Knight Legend" });
+            if(!deletedBots.includes('bot2')) players.push({ id: 'bot2', name: "Arthur", score: 3000, avatar: "🛡️", rank: "Knight" });
+
+            players.sort((a,b) => b.score - a.score);
+            
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = players.map((p, i) => `
+                <div class="flex items-center space-x-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:scale-[1.02]">
+                    <div class="w-8 font-black text-slate-400">${i+1}</div>
+                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl border">${p.avatar}</div>
+                    <div class="flex-1 font-bold">
+                        ${p.name}
+                        <div class="text-[9px] text-indigo-500 uppercase">${p.rank}</div>
+                    </div>
+                    <div class="font-black text-indigo-600">${p.score} XP</div>
+                    ${isAdmin ? `
+                        <button onclick="deletePlayer('${p.id}', '${p.name}')" class="ml-2 w-10 h-10 rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    ` : ''}
+                </div>`).join('');
+        }
+
+        function toggleLeaderboard(show) { document.getElementById('leaderboard-modal').classList.toggle('hidden', !show); if(show) refreshLeaderboard(); }
+        
+        function toggleEquipment(show) { 
+            const m = document.getElementById('equipment-modal'); m.classList.toggle('hidden', !show);
+            if(show) {
+                document.getElementById('char-name').innerText = currentUser.name;
+                document.getElementById('char-rank').innerText = currentUser.rank;
+                document.getElementById('large-avatar').innerText = currentUser.avatar;
+                const left = document.getElementById('inventory-left'); const right = document.getElementById('inventory-right');
+                left.innerHTML = ''; right.innerHTML = '';
+                lessons.forEach((l, i) => {
+                    const owned = currentUser.inventory.includes(l.id);
+                    const html = `<div class="flex items-center space-x-3"><div class="equipment-slot ${owned ? 'active' : ''}">${owned ? l.itemIcon : '🔒'}</div><div class="text-xs font-bold">${owned ? l.itemName : 'Locked'}</div></div>`;
+                    if (i < 6) left.innerHTML += html; else right.innerHTML += html;
+                });
+            }
+        }
+
+        async function askAI(type) {
+            const res = document.getElementById('ai-response');
+            document.getElementById('ai-panel').classList.remove('hidden'); 
+            res.innerText = "ท่าน Sage กำลังวิเคราะห์มนตรา...";
+            const code = document.getElementById('code-editor').value;
+            const prompt = type === 'explain' ? `อธิบายโค้ด: ${code}` : `แก้ Error: ${document.getElementById('console-output').innerText}`;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "คุณคือ Sage ผู้เชี่ยวชาญ Python" }] } })
+                });
+                const data = await response.json();
+                res.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "นิมิตพร่ามัว...";
+            } catch (e) { res.innerText = "เชื่อมต่อล้มเหลว..."; }
+        }
+    </script>
+</body>
+</html>
