@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบประเมิน IOC - รูปแบบการเรียนรู้</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { background-color: white; }
+            .print-container { box-shadow: none !important; border: none !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+            .page-break { page-break-before: always; }
+        }
+        .radio-custom:checked + label {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        /* Custom Modal Style */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Admin Login Button -->
+    <button onclick="openAdminModal()" class="no-print fixed bottom-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all z-50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+    </button>
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-lg p-6 md:p-10 print-container border border-gray-200">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-8 border-b-2 border-blue-600 pb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">แบบประเมินรูปแบบการเรียนรู้</h1>
+            <p class="text-lg text-blue-700 font-medium">รูปแบบการเรียนรู้แบบจุลภาคร่วมกับแชทบอทปัญญาประดิษฐ์ภายใต้สภาพแวดล้อมแบบกลไกเกม<br>เพื่อส่งเสริมสมรรถนะการเขียนโปรแกรมคอมพิวเตอร์</p>
+            <p class="text-sm text-gray-500 mt-2 italic text-center">Development of Gamified Micro-learning Model with AI Chatbot Support to Enhance Computer Programming Competency</p>
+        </div>
+
+        <form id="iocForm">
+            <!-- Part 1: Expert Info -->
+            <section class="mb-10">
+                <h2 class="text-xl font-semibold text-gray-700 border-l-4 border-blue-600 pl-3 mb-4">ตอนที่ 1 ข้อมูลผู้เชี่ยวชาญ</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">ชื่อ - สกุล</label>
+                        <input type="text" id="name" class="w-full border-gray-300 border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">ตำแหน่งทางวิชาการ</label>
+                        <input type="text" id="position" class="w-full border-gray-300 border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">สาขาความเชี่ยวชาญ</label>
+                        <input type="text" id="expertise" class="w-full border-gray-300 border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">ประสบการณ์ (ปี)</label>
+                        <input type="number" id="experience" class="w-full border-gray-300 border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">หน่วยงาน / สถาบัน</label>
+                        <input type="text" id="organization" class="w-full border-gray-300 border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 2: Instructions -->
+            <section class="mb-10 bg-blue-50 p-4 rounded-md border border-blue-100">
+                <h2 class="text-lg font-semibold text-blue-800 mb-2">ตอนที่ 2 คำชี้แจง</h2>
+                <p class="text-sm text-gray-700 mb-3">แบบประเมินนี้มีวัตถุประสงค์เพื่อประเมินความสอดคล้องขององค์ประกอบรูปแบบการเรียนรู้ (Index of Item-Objective Congruence: IOC)</p>
+                <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div class="bg-white p-2 rounded shadow-sm border border-green-200"><span class="font-bold text-green-600">+1</span> : สอดคล้อง</div>
+                    <div class="bg-white p-2 rounded shadow-sm border border-gray-200"><span class="font-bold text-gray-600">0</span> : ไม่แน่ใจ</div>
+                    <div class="bg-white p-2 rounded shadow-sm border border-red-200"><span class="font-bold text-red-600">-1</span> : ไม่สอดคล้อง</div>
+                </div>
+            </section>
+
+            <!-- Part 3: Items -->
+            <section class="mb-10 overflow-x-auto">
+                <h2 class="text-xl font-semibold text-gray-700 border-l-4 border-blue-600 pl-3 mb-4">ตอนที่ 3 รายการประเมิน (สำหรับ IOC)</h2>
+                
+                <table class="w-full border-collapse border border-gray-300 min-w-[600px]">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="border border-gray-300 p-3 text-center w-12">ข้อ</th>
+                            <th class="border border-gray-300 p-3 text-left">รายการประเมิน</th>
+                            <th colspan="3" class="border border-gray-300 p-3 text-center w-48">ระดับความคิดเห็น</th>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="border border-gray-300"></th>
+                            <th class="border border-gray-300 p-2 text-center text-xs font-bold">+1</th>
+                            <th class="border border-gray-300 p-2 text-center text-xs font-bold">0</th>
+                            <th class="border border-gray-300 p-2 text-center text-xs font-bold">-1</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluationItems">
+                        <!-- Items will be injected here via JS -->
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Part 5: Suggestions -->
+            <section class="mb-10 page-break">
+                <h2 class="text-xl font-semibold text-gray-700 border-l-4 border-blue-600 pl-3 mb-4">ตอนที่ 5 ข้อเสนอแนะเพิ่มเติม</h2>
+                <textarea id="suggestions" class="w-full border-gray-300 border rounded-md p-4 h-32 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="ระบุข้อเสนอแนะของท่าน..."></textarea>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="no-print flex flex-col sm:flex-row justify-center gap-4 py-8 border-t">
+                <button type="submit" id="submitBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    ส่งผลการประเมินเข้าระบบ
+                </button>
+        <!--     <button type="button" onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    พิมพ์ผล (PDF)
+                </button>
+                -->
+            </div>
+        </form>
+
+        <footer class="text-center text-gray-400 text-xs mt-4 no-print">
+            สร้างโดยระบบจัดการแบบประเมินดิจิทัล &copy; 2024
+        </footer>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold">Admin Dashboard</p>
+                    <button onclick="closeAdminModal()" class="modal-close cursor-pointer z-50">
+                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                            <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="loginSection">
+                    <p class="mb-4 text-gray-600">กรุณาใส่รหัสผ่านเพื่อเข้าถึงข้อมูล</p>
+                    <input type="password" id="adminPassword" class="w-full border rounded p-2 mb-4 outline-none focus:ring-2 focus:ring-blue-500" placeholder="รหัสผ่าน">
+                    <button onclick="checkAdminPassword()" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition-all">เข้าสู่ระบบ</button>
+                </div>
+                <div id="adminActionSection" class="hidden">
+                    <p class="mb-4 text-green-600 font-semibold">ยืนยันตัวตนสำเร็จ!</p>
+                    <button onclick="downloadCSV()" class="w-full bg-green-600 text-white font-bold py-3 rounded hover:bg-green-700 transition-all flex items-center justify-center mb-2">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download CSV (ผลการประเมินทั้งหมด)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Firebase Config from User
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgvU9OIxJZEhqXH0bFdF35HLyL4aF_vQE",
+            authDomain: "testdb-e6a21.firebaseapp.com",
+            databaseURL: "https://testdb-e6a21-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "testdb-e6a21",
+            storageBucket: "testdb-e6a21.firebasestorage.app",
+            messagingSenderId: "675492076711",
+            appId: "1:675492076711:web:892839e5c4bb3671e84f82"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ioc-model-eval';
+
+        // Auth: Sign in anonymously for simple data entry
+        signInAnonymously(auth).catch((error) => console.error("Auth Error:", error));
+
+        const itemsData = [
+            { groupHeader: "หมวดที่ 1 องค์ประกอบของรูปแบบการเรียนรู้ (Learning Model Components)" },
+            { id: 1, text: "รูปแบบการเรียนรู้มีการกำหนดวัตถุประสงค์การเรียนรู้ที่ชัดเจน" },
+            { id: 2, text: "การออกแบบเนื้อหาแบบ Micro-learning เหมาะสมกับการเรียนเขียนโปรแกรม" },
+            { id: 3, text: "การแบ่งเนื้อหาเป็นหน่วยย่อยช่วยลด Cognitive Load" },
+            { id: 4, text: "การใช้ Gamification (Points, Badges, Leaderboard) สอดคล้องกับเป้าหมายการเรียนรู้" },
+            { id: 5, text: "กลไกเกมช่วยกระตุ้นแรงจูงใจของผู้เรียน" },
+            { id: 6, text: "AI-Chatbot ทำหน้าที่เป็นผู้ช่วยสอนได้อย่างเหมาะสม" },
+            { id: 7, text: "AI-Chatbot สามารถให้ Feedback ต่อการเขียนโปรแกรมได้" },
+            { id: 8, text: "องค์ประกอบทั้ง 3 (Micro-learning, Gamification, AI-Chatbot) มีความสอดคล้องกัน" },
+            { groupHeader: "หมวดที่ 2 กระบวนการของรูปแบบการเรียนรู้ (Learning Model Process)" },
+            { id: 9, text: "รูปแบบการเรียนรู้มีขั้นตอนการเรียนรู้ที่เป็นระบบ (Analysis-Design-Development-Implementation-Evaluation)" },
+            { id: 10, text: "ลำดับกิจกรรมการเรียนรู้มีความเหมาะสม" },
+            { id: 11, text: "การใช้ Micro-Learning สอดคล้องกับแต่ละขั้นตอนของการเรียนรู้" },
+            { id: 12, text: "การใช้ Gamification สอดคล้องกับกิจกรรมการเรียนรู้" },
+            { id: 13, text: "การใช้ AI-Chatbot สนับสนุนกระบวนการเรียนรู้ได้อย่างต่อเนื่อง" },
+            { groupHeader: "หมวดที่ 3 การวัดและประเมินผล (Evaluation)" },
+            { id: 14, text: "วิธีการวัดผลสัมฤทธิ์ทางการเรียนมีความเหมาะสม" },
+            { id: 15, text: "วิธีการวัดสมรรถนะตามมาตรฐานคุณวุฒิวิชาชีพมีความเหมาะสม" },
+            { id: 16, text: "การใช้ Performance-based assessment สอดคล้องกับ TPQI" },
+            { id: 17, text: "เครื่องมือวัดสามารถสะท้อนผลลัพธ์การเรียนรู้ได้จริง" },
+            { groupHeader: "หมวดที่ 4 ความเหมาะสมโดยรวมของรูปแบบ" },
+            { id: 18, text: "รูปแบบการเรียนรู้มีความเหมาะสมในการนำไปใช้จริง" },
+            { id: 19, text: "รูปแบบการเรียนรู้สามารถส่งเสริมสมรรถนะการเขียนโปรแกรมได้" },
+            { id: 20, text: "รูปแบบการเรียนรู้มีความเป็นไปได้ในการนำไปใช้ในระดับอุดมศึกษา" }
+        ];
+
+        // Render Items
+        const tbody = document.getElementById('evaluationItems');
+        itemsData.forEach(item => {
+            if (item.groupHeader) {
+                const tr = document.createElement('tr');
+                tr.className = "bg-blue-50 font-semibold";
+                tr.innerHTML = `<td colspan="5" class="border border-gray-300 p-2 px-4">${item.groupHeader}</td>`;
+                tbody.appendChild(tr);
+            } else {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="border border-gray-300 p-3 text-center">${item.id}</td>
+                    <td class="border border-gray-300 p-3 text-sm">${item.text}</td>
+                    ${[1, 0, -1].map(val => `
+                        <td class="border border-gray-300 p-2 text-center">
+                            <input type="radio" name="item_${item.id}" value="${val}" id="i${item.id}_${val}" class="hidden radio-custom" required>
+                            <label for="i${item.id}_${val}" class="inline-block w-8 h-8 leading-8 rounded-full border border-gray-300 cursor-pointer hover:border-blue-500 transition-all">${val === 1 ? '+' : val}</label>
+                        </td>
+                    `).join('')}
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+
+        // Form Submission
+        document.getElementById('iocForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "กำลังบันทึกข้อมูล...";
+
+            try {
+                const ratings = {};
+                for (let i = 1; i <= 20; i++) {
+                    const selected = document.querySelector(`input[name="item_${i}"]:checked`);
+                    ratings[`q${i}`] = selected ? parseInt(selected.value) : null;
+                }
+
+                const data = {
+                    expertInfo: {
+                        name: document.getElementById('name').value,
+                        position: document.getElementById('position').value,
+                        expertise: document.getElementById('expertise').value,
+                        experience: document.getElementById('experience').value,
+                        organization: document.getElementById('organization').value
+                    },
+                    ratings: ratings,
+                    suggestions: document.getElementById('suggestions').value,
+                    createdAt: serverTimestamp()
+                };
+
+                // Store in Firestore following the rule: /artifacts/{appId}/public/data/{collectionName}
+                const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'evaluations'), data);
+                
+                alert("บันทึกข้อมูลสำเร็จ! ขอบพระคุณสำหรับความคิดเห็นของท่าน");
+                location.reload();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "ส่งผลการประเมินเข้าระบบ";
+            }
+        });
+
+        // Admin Dashboard Functions (Exposed to Global window for simple HTML calling)
+        window.openAdminModal = () => {
+            const modal = document.getElementById('adminModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('modal-active');
+        };
+
+        window.closeAdminModal = () => {
+            const modal = document.getElementById('adminModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('adminActionSection').classList.add('hidden');
+        };
+
+        window.checkAdminPassword = () => {
+            const pw = document.getElementById('adminPassword').value;
+            if (pw === 'admin1234') {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('adminActionSection').classList.remove('hidden');
+            } else {
+                alert("รหัสผ่านไม่ถูกต้อง");
+            }
+        };
+
+        window.downloadCSV = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'evaluations'));
+                if (querySnapshot.empty) {
+                    alert("ยังไม่มีข้อมูลการประเมินในระบบ");
+                    return;
+                }
+
+                let csvRows = [];
+                // Headers
+                const headers = ["วันที่", "ชื่อ-สกุล", "ตำแหน่ง", "ความเชี่ยวชาญ", "ประสบการณ์", "หน่วยงาน"];
+                for (let i = 1; i <= 20; i++) headers.push(`ข้อ ${i}`);
+                headers.push("ข้อเสนอแนะ");
+                csvRows.push(headers.join(","));
+
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const row = [
+                        d.createdAt ? new Date(d.createdAt.seconds * 1000).toLocaleString('th-TH') : "N/A",
+                        `"${d.expertInfo.name}"`,
+                        `"${d.expertInfo.position}"`,
+                        `"${d.expertInfo.expertise}"`,
+                        `"${d.expertInfo.experience}"`,
+                        `"${d.expertInfo.organization}"`
+                    ];
+                    for (let i = 1; i <= 20; i++) row.push(d.ratings[`q${i}`]);
+                    row.push(`"${d.suggestions.replace(/"/g, '""')}"`);
+                    csvRows.push(row.join(","));
+                });
+
+                const csvContent = "\uFEFF" + csvRows.join("\n"); // Add BOM for Excel Thai characters
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `IOC_Results_${new Date().toLocaleDateString()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error("CSV Download Error:", error);
+                alert("ไม่สามารถโหลดข้อมูลได้: " + error.message);
+            }
+        };
+    </script>
+</body>
+</html>
